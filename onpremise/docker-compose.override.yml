@@ -1,0 +1,44 @@
+# ==============================================================================
+# 사내 온프레미스 Docker Compose 오버라이드
+#
+# 사용법:
+#   cp onpremise/docker-compose.override.yml docker-compose.override.yml
+#   cp onpremise/.env.example .env
+#   # .env 파일을 사내 환경에 맞게 수정
+#   docker compose up -d
+#
+# docker-compose.override.yml은 docker compose가 자동으로 병합합니다.
+# 원본 docker-compose.yml을 수정하지 않으므로 upstream pull 시 충돌이 없습니다.
+# ==============================================================================
+
+services:
+  deepwiki:
+    build:
+      args:
+        # .env의 SSL_CERT_FILE 값을 빌드 인수로 전달 (빌드 컨텍스트 내 상대경로)
+        SSL_CERT_FILE: ${SSL_CERT_FILE}
+    environment:
+      # vLLM → openai 프로바이더로 연결
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-dummy-key-for-vllm}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      # 커스텀 설정 (vLLM 모델만 노출)
+      - DEEPWIKI_CONFIG_DIR=/app/custom-config
+      # 임베딩: Ollama
+      - DEEPWIKI_EMBEDDER_TYPE=ollama
+      # 프록시
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,ollama}
+      # 런타임 SSL 인증서 (빌드 시 설치된 CA 번들 참조)
+      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+      - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+      - GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt
+    volumes:
+      - ~/.adalflow:/root/.adalflow
+      - ./api/logs:/app/api/logs
+      # 커스텀 설정 파일 마운트 (읽기 전용)
+      - ./onpremise/config:/app/custom-config:ro
+    extra_hosts:
+      # vLLM 서버 DNS 해석 불가 시 직접 매핑 (IP 수정 필요)
+      # - "gpu-server-01.corp.local:10.0.1.100"

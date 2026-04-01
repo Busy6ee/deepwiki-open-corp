@@ -1,9 +1,17 @@
 # syntax=docker/dockerfile:1-labs
 
-# Build argument for custom certificates directory
-ARG CUSTOM_CERT_DIR="certs"
+# SSL_CERT_FILE: path to CA cert file relative to build context (from .env)
+# Example: SSL_CERT_FILE=onpremise/certs/company-ca.crt
+ARG SSL_CERT_FILE=""
 
 FROM node:20-alpine3.22 AS node_base
+ARG SSL_CERT_FILE
+# Install custom CA certificate if provided; use package.json as harmless dummy when empty
+COPY ${SSL_CERT_FILE:-package.json} /tmp/_build_cert
+RUN if [ -n "$SSL_CERT_FILE" ]; then \
+      cp /tmp/_build_cert /usr/local/share/ca-certificates/custom-ca.crt && \
+      update-ca-certificates 2>/dev/null; \
+    fi && rm -f /tmp/_build_cert
 
 FROM node_base AS node_deps
 WORKDIR /app
@@ -27,6 +35,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN NODE_ENV=production node node_modules/next/dist/bin/next build
 
 FROM python:3.11-slim AS py_deps
+ARG SSL_CERT_FILE
+COPY ${SSL_CERT_FILE:-api/pyproject.toml} /tmp/_build_cert
+RUN if [ -n "$SSL_CERT_FILE" ]; then \
+      cp /tmp/_build_cert /usr/local/share/ca-certificates/custom-ca.crt && \
+      update-ca-certificates 2>/dev/null; \
+    fi && rm -f /tmp/_build_cert
 WORKDIR /api
 COPY api/pyproject.toml .
 COPY api/poetry.lock .
@@ -57,17 +71,15 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Update certificates if custom ones were provided and copied successfully
-RUN if [ -n "${CUSTOM_CERT_DIR}" ]; then \
-        mkdir -p /usr/local/share/ca-certificates && \
-        if [ -d "${CUSTOM_CERT_DIR}" ]; then \
-            cp -r ${CUSTOM_CERT_DIR}/* /usr/local/share/ca-certificates/ 2>/dev/null || true; \
-            update-ca-certificates; \
-            echo "Custom certificates installed successfully."; \
-        else \
-            echo "Warning: ${CUSTOM_CERT_DIR} not found. Skipping certificate installation."; \
-        fi \
-    fi
+# Install custom CA certificate if provided
+ARG SSL_CERT_FILE
+COPY ${SSL_CERT_FILE:-package.json} /tmp/_build_cert
+RUN if [ -n "$SSL_CERT_FILE" ]; then \
+      mkdir -p /usr/local/share/ca-certificates && \
+      cp /tmp/_build_cert /usr/local/share/ca-certificates/custom-ca.crt && \
+      update-ca-certificates && \
+      echo "Custom certificate installed successfully."; \
+    fi && rm -f /tmp/_build_cert
 
 ENV PATH="/opt/venv/bin:$PATH"
 
@@ -84,19 +96,11 @@ COPY --from=node_builder /app/.next/static ./.next/static
 EXPOSE ${PORT:-8001} 3000
 
 # Create a script to run both backend and frontend
-RUN echo '#!/bin/bash\n\
+RUN echo '#!/bin/sh\n\
 # Load environment variables from .env file if it exists\n\
 if [ -f .env ]; then\n\
   export $(grep -v "^#" .env | xargs -r)\n\
 fi\n\
-\n\
-# Check for required environment variables\n\
-if [ -z "$OPENAI_API_KEY" ] || [ -z "$GOOGLE_API_KEY" ]; then\n\
-  echo "Warning: OPENAI_API_KEY and/or GOOGLE_API_KEY environment variables are not set."\n\
-  echo "These are required for DeepWiki to function properly."\n\
-  echo "You can provide them via a mounted .env file or as environment variables when running the container."\n\
-fi\n\
-\n\
 \n\
 # Start the API server in the background with the configured port\n\
 python -m api.main --port ${PORT:-8001} &\n\
