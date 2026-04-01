@@ -1,0 +1,15 @@
+{
+  "default_provider": "openai",
+  "providers": {
+    "openai": {
+      "default_model": "Qwen2.5-72B-Instruct",
+      "supportsCustomModel": true,
+      "models": {
+        "Qwen2.5-72B-Instruct": {
+          "temperature": 0.7,
+          "top_p": 0.8
+        }
+      }
+    }
+  }
+}

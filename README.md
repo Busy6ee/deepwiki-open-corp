@@ -34,9 +34,8 @@
 - **Easy Navigation**: Simple, intuitive interface to explore the wiki
 - **Ask Feature**: Chat with your repository using RAG-powered AI to get accurate answers
 - **DeepResearch**: Multi-turn research process that thoroughly investigates complex topics
-- **Multiple Model Providers**: Support for Google Gemini, OpenAI, OpenRouter, local Ollama, and vLLM-compatible servers
-- **Flexible Embeddings**: Choose between OpenAI, Google AI, local Ollama, or vLLM embeddings for optimal performance
-- **On-Premise Ready**: Deploy with internal vLLM servers, custom CA certificates, and proxy support ([guide](docs/VLLM_ONPREMISE_GUIDE.md))
+- **Multiple Model Providers**: Support for Google Gemini, OpenAI, OpenRouter, and local Ollama models
+- **Flexible Embeddings**: Choose between OpenAI, Google AI, or local Ollama embeddings for optimal performance
 
 ## 🚀 Quick Start (Super Easy!)
 
@@ -60,9 +59,6 @@ echo "OLLAMA_HOST=your_ollama_host" >> .env
 echo "AZURE_OPENAI_API_KEY=your_azure_openai_api_key" >> .env
 echo "AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint" >> .env
 echo "AZURE_OPENAI_VERSION=your_azure_openai_version" >> .env
-# Optional: Add vLLM server URL for on-premise deployment
-echo "VLLM_BASE_URL=http://your-vllm-server:8000/v1" >> .env
-echo "VLLM_MODEL=your-model-name" >> .env
 # Run with Docker Compose
 docker-compose up
 ```
@@ -210,7 +206,6 @@ DeepWiki now implements a flexible provider-based model selection system support
 - **OpenRouter**: Access to multiple models via a unified API, including Claude, Llama, Mistral, etc.
 - **Azure OpenAI**: Default `gpt-4o`, also supports `o4-mini`, etc.
 - **Ollama**: Support for locally running open-source models like `llama3`
-- **vLLM**: OpenAI-compatible API for on-premise vLLM inference servers (any model served by vLLM)
 
 ### Environment Variables
 
@@ -231,11 +226,6 @@ OPENAI_BASE_URL=https://custom-api-endpoint.com/v1  # Optional, for custom OpenA
 # Ollama host
 OLLAMA_HOST=your_ollama_host # Optional, if Ollama is not local. default: http://localhost:11434
 
-# vLLM (on-premise inference server)
-VLLM_BASE_URL=http://vllm-server:8000/v1  # Required for vLLM provider
-VLLM_API_KEY=no-key-required               # Optional, only if vLLM has auth enabled
-VLLM_MODEL=your-model-name                 # Required for vLLM provider
-
 # Configuration Directory
 DEEPWIKI_CONFIG_DIR=/path/to/custom/config/dir  # Optional, for custom config file location
 ```
@@ -245,7 +235,7 @@ DEEPWIKI_CONFIG_DIR=/path/to/custom/config/dir  # Optional, for custom config fi
 DeepWiki uses JSON configuration files to manage various aspects of the system:
 
 1. **`generator.json`**: Configuration for text generation models
-   - Defines available model providers (Google, OpenAI, OpenRouter, Azure, Ollama, vLLM)
+   - Defines available model providers (Google, OpenAI, OpenRouter, Azure, Ollama)
    - Specifies default and available models for each provider
    - Contains model-specific parameters like temperature and top_p
 
@@ -352,7 +342,6 @@ docker-compose up
 | `openai` | OpenAI embeddings (default) | `OPENAI_API_KEY` | Uses `text-embedding-3-small` model |
 | `google` | Google AI embeddings | `GOOGLE_API_KEY` | Uses `text-embedding-004` model |
 | `ollama` | Local Ollama embeddings | None | Requires local Ollama installation |
-| `vllm` | vLLM-served embeddings | `VLLM_BASE_URL` | Uses embedding model served by vLLM |
 
 ### Why Use Google AI Embeddings?
 
@@ -375,8 +364,6 @@ export DEEPWIKI_EMBEDDER_TYPE=google
 # Use local Ollama embeddings
 export DEEPWIKI_EMBEDDER_TYPE=ollama
 
-# Use vLLM-served embeddings (on-premise)
-export DEEPWIKI_EMBEDDER_TYPE=vllm
 ```
 
 **Note**: When switching embedders, you may need to regenerate your repository embeddings as different models produce different vector spaces.
@@ -435,11 +422,7 @@ docker-compose up
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint                    | No | Required only if you want to use Azure OpenAI models                                                       |
 | `AZURE_OPENAI_VERSION` | Azure OpenAI version                     | No | Required only if you want to use Azure OpenAI models                                                       |
 | `OLLAMA_HOST`        | Ollama Host (default: http://localhost:11434)                | No | Required only if you want to use external Ollama server                                                  |
-| `VLLM_BASE_URL`      | vLLM server OpenAI-compatible endpoint                       | No | Required for vLLM provider (e.g., `http://vllm-server:8000/v1`)                                         |
-| `VLLM_API_KEY`       | vLLM server API key                                           | No | Only if vLLM has authentication enabled (defaults to dummy key)                                          |
-| `VLLM_MODEL`         | Default generation model name on vLLM                         | No | Required for vLLM provider                                                                               |
-| `VLLM_EMBED_MODEL`   | Embedding model name on vLLM                                  | No | Required when using `DEEPWIKI_EMBEDDER_TYPE=vllm`                                                        |
-| `DEEPWIKI_EMBEDDER_TYPE` | Embedder type: `openai`, `google`, `ollama`, `bedrock`, or `vllm` (default: `openai`) | No | Controls which embedding provider to use                                                              |
+| `DEEPWIKI_EMBEDDER_TYPE` | Embedder type: `openai`, `google`, `ollama`, or `bedrock` (default: `openai`) | No | Controls which embedding provider to use                                                              |
 | `PORT`               | Port for the API server (default: 8001)                      | No | If you host API and frontend on the same machine, make sure change port of `SERVER_BASE_URL` accordingly |
 | `SERVER_BASE_URL`    | Base URL for the API server (default: http://localhost:8001) | No |
 | `DEEPWIKI_AUTH_MODE` | Set to `true` or `1` to enable authorization mode. | No | Defaults to `false`. If enabled, `DEEPWIKI_AUTH_CODE` is required. |
@@ -450,8 +433,6 @@ docker-compose up
 - If using `DEEPWIKI_EMBEDDER_TYPE=google`: `GOOGLE_API_KEY` is required  
 - If using `DEEPWIKI_EMBEDDER_TYPE=ollama`: No API key required (local processing)
 - If using `DEEPWIKI_EMBEDDER_TYPE=bedrock`: AWS credentials (or role-based credentials) are required
-- If using `DEEPWIKI_EMBEDDER_TYPE=vllm`: `VLLM_BASE_URL` is required, `VLLM_API_KEY` optional
-
 Other API keys are only required when configuring and using models from the corresponding providers.
 
 ## Authorization Mode
@@ -485,8 +466,6 @@ docker run -p 8001:8001 -p 3000:3000 \
   -e AZURE_OPENAI_API_KEY=your_azure_openai_api_key \
   -e AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint \
   -e AZURE_OPENAI_VERSION=your_azure_openai_version \
-  -e VLLM_BASE_URL=http://your-vllm-server:8000/v1 \
-  -e VLLM_MODEL=your-model-name \
   -v ~/.adalflow:/root/.adalflow \
   ghcr.io/asyncfuncai/deepwiki-open:latest
 ```
@@ -520,9 +499,6 @@ echo "AZURE_OPENAI_API_KEY=your_azure_openai_api_key" >> .env
 echo "AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint" >> .env
 echo "AZURE_OPENAI_VERSION=your_azure_openai_version"  >>.env
 echo "OLLAMA_HOST=your_ollama_host" >> .env
-echo "VLLM_BASE_URL=http://your-vllm-server:8000/v1" >> .env
-echo "VLLM_MODEL=your-model-name" >> .env
-
 # Run the container with the .env file mounted
 docker run -p 8001:8001 -p 3000:3000 \
   -v $(pwd)/.env:/app/.env \
@@ -558,8 +534,6 @@ docker run -p 8001:8001 -p 3000:3000 \
   -e AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint \
   -e AZURE_OPENAI_VERSION=your_azure_openai_version \
   -e OLLAMA_HOST=your_ollama_host \
-  -e VLLM_BASE_URL=http://your-vllm-server:8000/v1 \
-  -e VLLM_MODEL=your-model-name \
   deepwiki-open
 ```
 
@@ -578,14 +552,6 @@ docker build .
 # Or build with a custom certificates directory
 docker build --build-arg CUSTOM_CERT_DIR=my-custom-certs .
 ```
-
-#### On-Premise / vLLM Deployment
-
-For deploying DeepWiki in on-premise environments with vLLM inference servers, internal CA certificates, and proxy servers, see:
-
-- [On-Premise Deployment Guide](docs/ON_PREMISE_DEPLOYMENT.md) — Air-gapped and secured network deployment
-- [vLLM On-Premise Guide](docs/VLLM_ONPREMISE_GUIDE.md) — vLLM server integration, certificates, and proxy configuration
-- [사내 온프레미스 설정 가이드](docs/ONPREMISE_SETUP_GUIDE.md) — 사내 vLLM·인증서·프록시 환경 단계별 운영 설정
 
 ### API Server Details
 

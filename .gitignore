@@ -70,3 +70,8 @@ next-env.d.ts
 
 # ignore adding self-signed certs
 certs/
+
+# on-premise overrides (user-specific, not tracked)
+docker-compose.override.yml
+onpremise/certs/*.crt
+onpremise/certs/*.pem

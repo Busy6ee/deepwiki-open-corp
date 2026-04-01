@@ -449,27 +449,6 @@ async def chat_completions_stream(request: ChatCompletionRequest):
                 model_kwargs=model_kwargs,
                 model_type=ModelType.LLM,
             )
-        elif request.provider == "vllm":
-            logger.info(f"Using vLLM-compatible server with model: {request.model}")
-
-            init_kwargs = model_config.get("initialize_kwargs", {
-                "env_base_url_name": "VLLM_BASE_URL",
-                "env_api_key_name": "VLLM_API_KEY"
-            })
-            model = OpenAIClient(**init_kwargs)
-            model_kwargs = {
-                "model": request.model,
-                "stream": True,
-                "temperature": model_config.get("temperature", 0.7)
-            }
-            if "top_p" in model_config:
-                model_kwargs["top_p"] = model_config["top_p"]
-
-            api_kwargs = model.convert_inputs_to_api_kwargs(
-                input=prompt,
-                model_kwargs=model_kwargs,
-                model_type=ModelType.LLM,
-            )
         else:
             # Initialize Google Generative AI model (default provider)
             model = genai.GenerativeModel(
@@ -570,21 +549,6 @@ async def chat_completions_stream(request: ChatCompletionRequest):
                             "Please check that you have set the DASHSCOPE_API_KEY (and optionally "
                             "DASHSCOPE_WORKSPACE_ID) environment variables with valid values."
                         )
-                elif request.provider == "vllm":
-                    try:
-                        logger.info("Making vLLM API call")
-                        response = await model.acall(api_kwargs=api_kwargs, model_type=ModelType.LLM)
-                        async for chunk in response:
-                            choices = getattr(chunk, "choices", [])
-                            if len(choices) > 0:
-                                delta = getattr(choices[0], "delta", None)
-                                if delta is not None:
-                                    text = getattr(delta, "content", None)
-                                    if text is not None:
-                                        yield text
-                    except Exception as e_vllm:
-                        logger.error(f"Error with vLLM API: {str(e_vllm)}")
-                        yield f"\nError with vLLM API: {str(e_vllm)}\n\nPlease check that VLLM_BASE_URL is set correctly and the vLLM server is running."
                 else:
                     # Google Generative AI (default provider)
                     response = model.generate_content(prompt, stream=True)
