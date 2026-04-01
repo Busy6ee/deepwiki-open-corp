@@ -1,5 +1,6 @@
 import logging
 import os
+import re as _re
 from typing import List, Optional, Dict, Any
 from urllib.parse import unquote
 
@@ -30,6 +31,11 @@ from api.logging_config import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
+
+def strip_think_tags(text: str) -> str:
+    """Remove <think>...</think> blocks (including multiline) from LLM output."""
+    return _re.sub(r'<think>[\s\S]*?</think>', '', text)
 
 
 # Models for the API
@@ -598,8 +604,9 @@ This file contains...
                             text = message.get("content")
 
                     if isinstance(text, str) and text and not text.startswith('model=') and not text.startswith('created_at='):
-                        clean_text = text.replace('<think>', '').replace('</think>', '')
-                        await websocket.send_text(clean_text)
+                        clean_text = strip_think_tags(text)
+                        if clean_text:
+                            await websocket.send_text(clean_text)
                 # Explicitly close the WebSocket connection after the response is complete
                 await websocket.close()
             elif request.provider == "openrouter":
@@ -631,7 +638,9 @@ This file contains...
                             if delta is not None:
                                 text = getattr(delta, "content", None)
                                 if text is not None:
-                                    await websocket.send_text(text)
+                                    clean_text = strip_think_tags(text)
+                                    if clean_text:
+                                        await websocket.send_text(clean_text)
                     # Explicitly close the WebSocket connection after the response is complete
                     await websocket.close()
                 except Exception as e_openai:
