@@ -10,9 +10,9 @@
   },
   "embedder_ollama": {
     "client_class": "OllamaClient",
-    "max_workers": 4,
+    "max_workers": 16,
     "model_kwargs": {
-      "model": "nomic-embed-text"
+      "model": "qwen3-embedding"
     }
   },
   "embedder_google": {
@@ -36,7 +36,7 @@
   },
   "text_splitter": {
     "split_by": "word",
-    "chunk_size": 350,
-    "chunk_overlap": 100
+    "chunk_size": 512,
+    "chunk_overlap": 128
   }
 }
