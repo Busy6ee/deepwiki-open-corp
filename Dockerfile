@@ -15,8 +15,11 @@ WORKDIR /app
 COPY --from=node_deps /app/node_modules ./node_modules
 # Copy only necessary files for Next.js build
 COPY package.json package-lock.json next.config.ts tsconfig.json tailwind.config.js postcss.config.mjs ./
+COPY scripts/ ./scripts/
 COPY src/ ./src/
 COPY public/ ./public/
+# Copy vendor assets (fontawesome, chart.js, mermaid) from node_modules to public/vendor/
+RUN bash scripts/copy-vendor-assets.sh
 # Increase Node.js memory limit for build and disable telemetry
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -92,6 +95,7 @@ if [ -z "$OPENAI_API_KEY" ] || [ -z "$GOOGLE_API_KEY" ]; then\n\
   echo "These are required for DeepWiki to function properly."\n\
   echo "You can provide them via a mounted .env file or as environment variables when running the container."\n\
 fi\n\
+\n\
 \n\
 # Start the API server in the background with the configured port\n\
 python -m api.main --port ${PORT:-8001} &\n\

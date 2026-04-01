@@ -1,4 +1,19 @@
 services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_NUM_PARALLEL=${OLLAMA_NUM_PARALLEL:-16}
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   deepwiki:
     build:
       context: .
@@ -14,9 +29,14 @@ services:
       - SERVER_BASE_URL=http://localhost:${PORT:-8001}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_FILE_PATH=${LOG_FILE_PATH:-api/logs/application.log}
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_EMBED_WORKERS=${OLLAMA_EMBED_WORKERS:-16}
     volumes:
       - ~/.adalflow:/root/.adalflow      # Persist repository and embedding data
       - ./api/logs:/app/api/logs          # Persist log files across container restarts
+    depends_on:
+      ollama:
+        condition: service_healthy
     # Resource limits for docker-compose up (not Swarm mode)
     mem_limit: 6g
     mem_reservation: 2g
@@ -27,3 +47,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+
+volumes:
+  ollama_data:
