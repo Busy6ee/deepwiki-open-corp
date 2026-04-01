@@ -566,28 +566,6 @@ This file contains...
                 model_kwargs=model_kwargs,
                 model_type=ModelType.LLM
             )
-        elif request.provider == "vllm":
-            logger.info(f"Using vLLM-compatible server with model: {request.model}")
-
-            # Initialize OpenAI-compatible client pointing to vLLM server
-            init_kwargs = model_config.get("initialize_kwargs", {
-                "env_base_url_name": "VLLM_BASE_URL",
-                "env_api_key_name": "VLLM_API_KEY"
-            })
-            model = OpenAIClient(**init_kwargs)
-            model_kwargs = {
-                "model": request.model,
-                "stream": True,
-                "temperature": model_config.get("temperature", 0.7)
-            }
-            if "top_p" in model_config:
-                model_kwargs["top_p"] = model_config["top_p"]
-
-            api_kwargs = model.convert_inputs_to_api_kwargs(
-                input=prompt,
-                model_kwargs=model_kwargs,
-                model_type=ModelType.LLM
-            )
         else:
             # Initialize Google Generative AI model
             model = genai.GenerativeModel(
@@ -734,26 +712,6 @@ This file contains...
                     )
                     await websocket.send_text(error_msg)
                     # Close the WebSocket connection after sending the error message
-                    await websocket.close()
-            elif request.provider == "vllm":
-                try:
-                    logger.info("Making vLLM API call")
-                    response = await model.acall(api_kwargs=api_kwargs, model_type=ModelType.LLM)
-                    async for chunk in response:
-                        choices = getattr(chunk, "choices", [])
-                        if len(choices) > 0:
-                            delta = getattr(choices[0], "delta", None)
-                            if delta is not None:
-                                text = getattr(delta, "content", None)
-                                if text is not None:
-                                    clean_text = strip_think_tags(text)
-                                    if clean_text:
-                                        await websocket.send_text(clean_text)
-                    await websocket.close()
-                except Exception as e_vllm:
-                    logger.error(f"Error with vLLM API: {str(e_vllm)}")
-                    error_msg = f"\nError with vLLM API: {str(e_vllm)}\n\nPlease check that VLLM_BASE_URL is set correctly and the vLLM server is running."
-                    await websocket.send_text(error_msg)
                     await websocket.close()
             else:
                 # Google Generative AI (default provider)

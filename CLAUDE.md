@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DeepWiki-Open is an AI-powered wiki generator for code repositories. It clones repos (GitHub/GitLab/Bitbucket), creates embeddings, and uses RAG + LLMs to generate structured documentation with Mermaid diagrams. It supports multiple LLM providers (Google, OpenAI, OpenRouter, Ollama, Azure, AWS Bedrock, DashScope, vLLM).
+DeepWiki-Open is an AI-powered wiki generator for code repositories. It clones repos (GitHub/GitLab/Bitbucket), creates embeddings, and uses RAG + LLMs to generate structured documentation with Mermaid diagrams. It supports multiple LLM providers (Google, OpenAI, OpenRouter, Ollama, Azure, AWS Bedrock, DashScope).
 
 ## Common Commands
 
@@ -49,7 +49,7 @@ docker-compose up
 - `simple_chat.py` — Chat/Q&A handling
 - `prompts.py` — LLM prompt templates
 - `config.py` — Configuration loading with `${ENV_VAR}` substitution from JSON configs
-- Provider clients: `openai_client.py`, `google_embedder_client.py`, `openrouter_client.py`, `azureai_client.py`, `bedrock_client.py`, `dashscope_client.py`, `ollama_patch.py` (vLLM uses `openai_client.py` with custom base_url)
+- Provider clients: `openai_client.py`, `google_embedder_client.py`, `openrouter_client.py`, `azureai_client.py`, `bedrock_client.py`, `dashscope_client.py`, `ollama_patch.py`
 - `tools/embedder.py` — Embedder factory/selector
 - `config/generator.json` — Model provider configurations
 - `config/embedder.json` — Embedding model configs (model, dimensions, chunk size)
@@ -78,9 +78,7 @@ All persistent data lives in `~/.adalflow/`: cloned repos (`repos/`), FAISS inde
 ## Key Environment Variables
 
 - `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY` — LLM provider keys
-- `VLLM_BASE_URL`, `VLLM_API_KEY`, `VLLM_MODEL` — vLLM on-premise server settings
-- `DEEPWIKI_EMBEDDER_TYPE` — "openai" (default), "google", "ollama", "bedrock", "vllm"
-- `VLLM_EMBED_MODEL` — Embedding model name when using vLLM embedder
+- `DEEPWIKI_EMBEDDER_TYPE` — "openai" (default), "google", "ollama", "bedrock"
 - `SERVER_BASE_URL` — Backend URL for frontend rewrites (default: `http://localhost:8001`)
 - `PORT` — API server port (default: 8001)
 - `DEEPWIKI_AUTH_MODE` / `DEEPWIKI_AUTH_CODE` — Optional auth protection

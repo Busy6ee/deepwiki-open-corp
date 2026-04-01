@@ -31,16 +31,6 @@ services:
       - LOG_FILE_PATH=${LOG_FILE_PATH:-api/logs/application.log}
       - OLLAMA_HOST=http://ollama:11434
       - OLLAMA_EMBED_WORKERS=${OLLAMA_EMBED_WORKERS:-16}
-      # vLLM settings (uncomment and configure for on-premise vLLM server)
-      # - VLLM_BASE_URL=${VLLM_BASE_URL}
-      # - VLLM_API_KEY=${VLLM_API_KEY:-no-key-required}
-      # - VLLM_MODEL=${VLLM_MODEL}
-      # - VLLM_EMBED_MODEL=${VLLM_EMBED_MODEL}
-      # - DEEPWIKI_EMBEDDER_TYPE=vllm
-      # Proxy settings (uncomment for on-premise environments)
-      # - HTTP_PROXY=${HTTP_PROXY}
-      # - HTTPS_PROXY=${HTTPS_PROXY}
-      # - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,ollama}
     volumes:
       - ~/.adalflow:/root/.adalflow      # Persist repository and embedding data
       - ./api/logs:/app/api/logs          # Persist log files across container restarts
