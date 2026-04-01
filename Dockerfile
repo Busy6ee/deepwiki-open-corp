@@ -23,7 +23,8 @@ RUN bash scripts/copy-vendor-assets.sh
 # Increase Node.js memory limit for build and disable telemetry
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN NODE_ENV=production npm run build
+# Use node to invoke next directly (COPY --from may break .bin symlinks)
+RUN NODE_ENV=production node node_modules/next/dist/bin/next build
 
 FROM python:3.11-slim AS py_deps
 WORKDIR /api
