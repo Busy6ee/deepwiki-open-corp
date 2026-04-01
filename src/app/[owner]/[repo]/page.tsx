@@ -939,17 +939,24 @@ IMPORTANT:
          throw new Error('The specified Ollama embedding model was not found. Please ensure the model is installed locally or select a different embedding model in the configuration.');
        }
 
-        // Clean up markdown delimiters
-      responseText = responseText.replace(/^```(?:xml)?\s*/i, '').replace(/```\s*$/i, '');
+      // Clean up markdown delimiters - handle multi-line and nested fences
+      responseText = responseText.replace(/```(?:xml|XML)?\s*\n?/g, '').replace(/\n?```\s*/g, '');
 
-      // Extract wiki structure from response
-      const xmlMatch = responseText.match(/<wiki_structure>[\s\S]*?<\/wiki_structure>/m);
+      // Strip <think>...</think> blocks that some models (e.g. GLM) emit
+      responseText = responseText.replace(/<think>[\s\S]*?<\/think>/g, '');
+
+      // Extract wiki structure from response - use GREEDY match to capture full XML
+      const xmlMatch = responseText.match(/<wiki_structure>[\s\S]*<\/wiki_structure>/m);
       if (!xmlMatch) {
         throw new Error('No valid XML found in response');
       }
 
       let xmlText = xmlMatch[0];
+      // Remove control characters
       xmlText = xmlText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+      // Escape unescaped ampersands (but not existing entities like &amp; &lt; &gt; &apos; &quot;)
+      xmlText = xmlText.replace(/&(?!amp;|lt;|gt;|apos;|quot;|#\d+;|#x[\da-fA-F]+;)/g, '&amp;');
+
       // Try parsing with DOMParser
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, "text/xml");
@@ -957,14 +964,7 @@ IMPORTANT:
       // Check for parsing errors
       const parseError = xmlDoc.querySelector('parsererror');
       if (parseError) {
-        // Log the first few elements to see what was parsed
-        const elements = xmlDoc.querySelectorAll('*');
-        if (elements.length > 0) {
-          console.log('First 5 element names:',
-            Array.from(elements).slice(0, 5).map(el => el.nodeName).join(', '));
-        }
-
-        // We'll continue anyway since the XML might still be usable
+        console.warn('XML parse error detected:', parseError.textContent?.substring(0, 200));
       }
 
       // Extract wiki structure
@@ -984,7 +984,43 @@ IMPORTANT:
       pages = [];
 
       if (parseError && (!pagesEls || pagesEls.length === 0)) {
-        console.warn('DOM parsing failed, trying regex fallback');
+        console.warn('DOM parsing failed, using regex fallback');
+
+        // Regex fallback: extract title
+        const titleMatch = xmlText.match(/<wiki_structure>\s*<title>([\s\S]*?)<\/title>/);
+        if (titleMatch) title = titleMatch[1].trim();
+
+        // Regex fallback: extract description
+        const descMatch = xmlText.match(/<description>([\s\S]*?)<\/description>/);
+        if (descMatch) description = descMatch[1].trim();
+
+        // Regex fallback: extract pages
+        const pageRegex = /<page\s+id="([^"]*)">([\s\S]*?)<\/page>/g;
+        let pageMatch;
+        while ((pageMatch = pageRegex.exec(xmlText)) !== null) {
+          const pageId = pageMatch[1];
+          const pageContent = pageMatch[2];
+
+          const pageTitleMatch = pageContent.match(/<title>([\s\S]*?)<\/title>/);
+          const pageDescMatch = pageContent.match(/<description>([\s\S]*?)<\/description>/);
+          const importanceMatch = pageContent.match(/<importance>([\s\S]*?)<\/importance>/);
+
+          const filePathMatches = [...pageContent.matchAll(/<file_path>([\s\S]*?)<\/file_path>/g)];
+          const relatedMatches = [...pageContent.matchAll(/<related>([\s\S]*?)<\/related>/g)];
+
+          const importance = importanceMatch ?
+            (importanceMatch[1].trim() === 'high' ? 'high' :
+              importanceMatch[1].trim() === 'medium' ? 'medium' : 'low') : 'medium';
+
+          pages.push({
+            id: pageId,
+            title: pageTitleMatch ? pageTitleMatch[1].trim() : '',
+            content: '',
+            filePaths: filePathMatches.map(m => m[1].trim()),
+            importance,
+            relatedPages: relatedMatches.map(m => m[1].trim()),
+          });
+        }
       }
 
       pagesEls.forEach(pageEl => {
