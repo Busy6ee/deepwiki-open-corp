@@ -2,6 +2,10 @@
 
 This guide covers deploying DeepWiki-Open in environments with restricted or no outbound internet access (air-gapped / secured network environments).
 
+> **관련 문서:**
+> - [사내 온프레미스 설정 가이드 (한국어)](ONPREMISE_SETUP_GUIDE.md) — 사내 vLLM·인증서·프록시 환경 단계별 설정
+> - [vLLM On-Premise Guide](VLLM_ONPREMISE_GUIDE.md) — vLLM server integration details
+
 ---
 
 ## Overview of Outbound Traffic Sources

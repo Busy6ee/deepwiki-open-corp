@@ -585,6 +585,7 @@ For deploying DeepWiki in on-premise environments with vLLM inference servers, i
 
 - [On-Premise Deployment Guide](docs/ON_PREMISE_DEPLOYMENT.md) — Air-gapped and secured network deployment
 - [vLLM On-Premise Guide](docs/VLLM_ONPREMISE_GUIDE.md) — vLLM server integration, certificates, and proxy configuration
+- [사내 온프레미스 설정 가이드](docs/ONPREMISE_SETUP_GUIDE.md) — 사내 vLLM·인증서·프록시 환경 단계별 운영 설정
 
 ### API Server Details
 
