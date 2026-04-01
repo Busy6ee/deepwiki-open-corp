@@ -583,6 +583,20 @@ Remember:
 
           // Create a promise that resolves when the WebSocket response is complete
           await new Promise<void>((resolve, reject) => {
+            // Keepalive ping every 25 seconds to prevent proxy/infrastructure idle timeout
+            const pingInterval = setInterval(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send('ping');
+              }
+            }, 25000);
+
+            // Response timeout: 10 minutes for page content generation
+            const responseTimeout = setTimeout(() => {
+              clearInterval(pingInterval);
+              ws.close();
+              reject(new Error(`Page content generation timed out (10 min) for: ${page.title}`));
+            }, 600000);
+
             // Handle incoming messages
             ws.onmessage = (event) => {
               content += event.data;
@@ -590,12 +604,16 @@ Remember:
 
             // Handle WebSocket close
             ws.onclose = () => {
+              clearInterval(pingInterval);
+              clearTimeout(responseTimeout);
               console.log(`WebSocket connection closed for page: ${page.title}`);
               resolve();
             };
 
             // Handle WebSocket errors
             ws.onerror = (error) => {
+              clearInterval(pingInterval);
+              clearTimeout(responseTimeout);
               console.error('WebSocket error during message reception:', error);
               reject(new Error('WebSocket error during message reception'));
             };
@@ -880,6 +898,20 @@ IMPORTANT:
 
         // Create a promise that resolves when the WebSocket response is complete
         await new Promise<void>((resolve, reject) => {
+          // Keepalive ping every 25 seconds to prevent proxy/infrastructure idle timeout
+          const pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send('ping');
+            }
+          }, 25000);
+
+          // Response timeout: 5 minutes for wiki structure (large repos need time)
+          const responseTimeout = setTimeout(() => {
+            clearInterval(pingInterval);
+            ws.close();
+            reject(new Error('Wiki structure generation timed out (5 min). The repository may be too large.'));
+          }, 300000);
+
           // Handle incoming messages
           ws.onmessage = (event) => {
             responseText += event.data;
@@ -887,12 +919,16 @@ IMPORTANT:
 
           // Handle WebSocket close
           ws.onclose = () => {
+            clearInterval(pingInterval);
+            clearTimeout(responseTimeout);
             console.log('WebSocket connection closed for wiki structure');
             resolve();
           };
 
           // Handle WebSocket errors
           ws.onerror = (error) => {
+            clearInterval(pingInterval);
+            clearTimeout(responseTimeout);
             console.error('WebSocket error during message reception:', error);
             reject(new Error('WebSocket error during message reception'));
           };

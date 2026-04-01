@@ -75,4 +75,6 @@ if __name__ == "__main__":
         port=port,
         reload=is_development,
         reload_excludes=["**/logs/*", "**/__pycache__/*", "**/*.pyc"] if is_development else None,
+        ws_ping_interval=30,
+        ws_ping_timeout=120,
     )
