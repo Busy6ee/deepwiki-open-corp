@@ -8,7 +8,7 @@ FROM node:20-alpine3.22 AS node_base
 FROM node_base AS node_deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 
 FROM node_base AS node_builder
 WORKDIR /app
