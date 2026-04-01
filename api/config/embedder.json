@@ -10,6 +10,7 @@
   },
   "embedder_ollama": {
     "client_class": "OllamaClient",
+    "max_workers": 4,
     "model_kwargs": {
       "model": "nomic-embed-text"
     }

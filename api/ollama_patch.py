@@ -1,5 +1,6 @@
 from typing import Sequence, List
 from copy import deepcopy
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import logging
 import adalflow as adal
@@ -61,45 +62,68 @@ def check_ollama_model_exists(model_name: str, ollama_host: str = None) -> bool:
 
 class OllamaDocumentProcessor(DataComponent):
     """
-    Process documents for Ollama embeddings by processing one document at a time.
-    Adalflow Ollama Client does not support batch embedding, so we need to process each document individually.
+    Process documents for Ollama embeddings with parallel execution.
+    Adalflow Ollama Client does not support batch embedding, so we send
+    individual requests but run them concurrently via a thread pool.
     """
-    def __init__(self, embedder: adal.Embedder) -> None:
+
+    # Default number of parallel embedding requests
+    DEFAULT_MAX_WORKERS = 4
+
+    def __init__(self, embedder: adal.Embedder, max_workers: int = None) -> None:
         super().__init__()
         self.embedder = embedder
+        self.max_workers = max_workers or int(
+            os.getenv("OLLAMA_EMBED_WORKERS", self.DEFAULT_MAX_WORKERS)
+        )
+
+    def _embed_single(self, doc: Document, index: int):
+        """Embed a single document. Returns (index, embedding) or (index, None)."""
+        file_path = getattr(doc, 'meta_data', {}).get('file_path', f'document_{index}')
+        try:
+            result = self.embedder(input=doc.text)
+            if result.data and len(result.data) > 0:
+                return (index, result.data[0].embedding, file_path)
+            else:
+                logger.warning(f"Failed to get embedding for document '{file_path}', skipping")
+                return (index, None, file_path)
+        except Exception as e:
+            logger.error(f"Error processing document '{file_path}': {e}, skipping")
+            return (index, None, file_path)
 
     def __call__(self, documents: Sequence[Document]) -> Sequence[Document]:
         output = deepcopy(documents)
-        logger.info(f"Processing {len(output)} documents individually for Ollama embeddings")
+        n = len(output)
+        logger.info(f"Processing {n} documents for Ollama embeddings (max_workers={self.max_workers})")
 
         successful_docs = []
         expected_embedding_size = None
 
-        for i, doc in enumerate(tqdm(output, desc="Processing documents for Ollama embeddings")):
-            try:
-                # Get embedding for a single document
-                result = self.embedder(input=doc.text)
-                if result.data and len(result.data) > 0:
-                    embedding = result.data[0].embedding
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = {
+                executor.submit(self._embed_single, doc, i): i
+                for i, doc in enumerate(output)
+            }
 
-                    # Validate embedding size consistency
-                    if expected_embedding_size is None:
-                        expected_embedding_size = len(embedding)
-                        logger.info(f"Expected embedding size set to: {expected_embedding_size}")
-                    elif len(embedding) != expected_embedding_size:
-                        file_path = getattr(doc, 'meta_data', {}).get('file_path', f'document_{i}')
-                        logger.warning(f"Document '{file_path}' has inconsistent embedding size {len(embedding)} != {expected_embedding_size}, skipping")
-                        continue
+            for future in tqdm(as_completed(futures), total=n, desc="Ollama embeddings"):
+                index, embedding, file_path = future.result()
 
-                    # Assign the embedding to the document
-                    output[i].vector = embedding
-                    successful_docs.append(output[i])
-                else:
-                    file_path = getattr(doc, 'meta_data', {}).get('file_path', f'document_{i}')
-                    logger.warning(f"Failed to get embedding for document '{file_path}', skipping")
-            except Exception as e:
-                file_path = getattr(doc, 'meta_data', {}).get('file_path', f'document_{i}')
-                logger.error(f"Error processing document '{file_path}': {e}, skipping")
+                if embedding is None:
+                    continue
 
-        logger.info(f"Successfully processed {len(successful_docs)}/{len(output)} documents with consistent embeddings")
+                # Validate embedding size consistency
+                if expected_embedding_size is None:
+                    expected_embedding_size = len(embedding)
+                    logger.info(f"Expected embedding size set to: {expected_embedding_size}")
+                elif len(embedding) != expected_embedding_size:
+                    logger.warning(
+                        f"Document '{file_path}' has inconsistent embedding size "
+                        f"{len(embedding)} != {expected_embedding_size}, skipping"
+                    )
+                    continue
+
+                output[index].vector = embedding
+                successful_docs.append(output[index])
+
+        logger.info(f"Successfully processed {len(successful_docs)}/{n} documents with consistent embeddings")
         return successful_docs

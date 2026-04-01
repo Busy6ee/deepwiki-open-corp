@@ -409,8 +409,9 @@ def prepare_data_pipeline(embedder_type: str = None, is_ollama_embedder: bool = 
 
     # Choose appropriate processor based on embedder type
     if embedder_type == 'ollama':
-        # Use Ollama document processor for single-document processing
-        embedder_transformer = OllamaDocumentProcessor(embedder=embedder)
+        # Use Ollama document processor with parallel execution
+        max_workers = embedder_config.get("max_workers", None)
+        embedder_transformer = OllamaDocumentProcessor(embedder=embedder, max_workers=max_workers)
     else:
         # Use batch processing for OpenAI and Google embedders
         batch_size = embedder_config.get("batch_size", 500)
