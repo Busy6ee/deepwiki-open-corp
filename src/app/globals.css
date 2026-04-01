@@ -39,11 +39,11 @@ html[data-theme='dark'] {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'Noto Sans JP', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
-  --font-geist-sans: 'Noto Sans JP', sans-serif;
-  --font-geist-mono: 'Geist Mono', monospace;
-  --font-serif-jp: 'Noto Serif JP', serif;
+  --font-sans: var(--font-noto-sans-jp-loaded, 'Noto Sans JP'), sans-serif;
+  --font-mono: var(--font-geist-mono-loaded, 'Geist Mono'), monospace;
+  --font-geist-sans: var(--font-noto-sans-jp-loaded, 'Noto Sans JP'), sans-serif;
+  --font-geist-mono: var(--font-geist-mono-loaded, 'Geist Mono'), monospace;
+  --font-serif-jp: var(--font-noto-serif-jp-loaded, 'Noto Serif JP'), serif;
 }
 
 body {

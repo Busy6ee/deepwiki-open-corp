@@ -37,6 +37,8 @@ def get_embedder(is_local_ollama: bool = False, use_google_embedder: bool = Fals
             embedder_config = configs["embedder_ollama"]
         elif current_type == 'google':
             embedder_config = configs["embedder_google"]
+        elif current_type == 'vllm':
+            embedder_config = configs["embedder_vllm"]
         else:
             embedder_config = configs["embedder"]
 

@@ -193,6 +193,21 @@
           "top_p": 0.8
         }
       }
+    },
+    "vllm": {
+      "client_class": "OpenAIClient",
+      "default_model": "${VLLM_MODEL}",
+      "supportsCustomModel": true,
+      "initialize_kwargs": {
+        "env_base_url_name": "VLLM_BASE_URL",
+        "env_api_key_name": "VLLM_API_KEY"
+      },
+      "models": {
+        "${VLLM_MODEL}": {
+          "temperature": 0.7,
+          "top_p": 0.8
+        }
+      }
     }
   }
 }

@@ -829,10 +829,9 @@ Please return ONLY the HTML with no markdown formatting or code blocks. Just the
     .bg-accent-blue { background-color: rgba(88, 166, 255, 0.2); }
     .bg-accent-purple { background-color: rgba(137, 87, 229, 0.2); }
 </style>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10.0.0/dist/mermaid.min.js"></script>
+<link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
+<script src="/vendor/chartjs/chart.umd.js"></script>
+<script src="/vendor/mermaid/mermaid.min.js"></script>
 <script>
   // Initialize Mermaid for diagrams if present
   document.addEventListener('DOMContentLoaded', function() {
@@ -901,8 +900,8 @@ Please return ONLY the HTML with no markdown formatting or code blocks. Just the
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${repo} Slides</title>
+  <!-- Note: Exported HTML uses CDN for standalone viewing. For fully offline use, replace with local paths. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.0.0/dist/mermaid.min.js"></script>
   <style>
@@ -1249,8 +1248,8 @@ Please return ONLY the HTML with no markdown formatting or code blocks. Just the
               <div
                 className={`${isFullscreen ? 'w-full h-full' : 'w-full max-w-[1280px] aspect-[16/9]'} flex items-center justify-center overflow-hidden`}
               >
-                {/* Include Font Awesome for icons */}
-                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+                {/* Include Font Awesome for icons (served locally from public/vendor/) */}
+                <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css" />
                 <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: slides[currentSlideIndex]?.html || '' }} />
               </div>
             </div>
