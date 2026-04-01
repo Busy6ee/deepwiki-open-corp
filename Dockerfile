@@ -19,7 +19,7 @@ COPY scripts/ ./scripts/
 COPY src/ ./src/
 COPY public/ ./public/
 # Copy vendor assets (fontawesome, chart.js, mermaid) from node_modules to public/vendor/
-RUN bash scripts/copy-vendor-assets.sh
+RUN sh scripts/copy-vendor-assets.sh
 # Increase Node.js memory limit for build and disable telemetry
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV NEXT_TELEMETRY_DISABLED=1

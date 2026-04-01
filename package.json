@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "bash scripts/copy-vendor-assets.sh || true",
-    "copy-vendor": "bash scripts/copy-vendor-assets.sh"
+    "postinstall": "sh scripts/copy-vendor-assets.sh || true",
+    "copy-vendor": "sh scripts/copy-vendor-assets.sh"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",

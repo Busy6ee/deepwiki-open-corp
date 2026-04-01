@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copy vendor assets to public/ for local serving (no external CDN needed)
 set -e
 
