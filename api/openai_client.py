@@ -190,17 +190,25 @@ class OpenAIClient(ModelClient):
     def init_sync_client(self):
         api_key = self._api_key or os.getenv(self._env_api_key_name)
         if not api_key:
-            raise ValueError(
-                f"Environment variable {self._env_api_key_name} must be set"
-            )
+            # Allow dummy key for OpenAI-compatible servers (e.g. vLLM) that don't require authentication
+            if self.base_url and "api.openai.com" not in self.base_url:
+                api_key = "no-key-required"
+                log.info(f"No API key set for {self._env_api_key_name}, using dummy key for compatible server at {self.base_url}")
+            else:
+                raise ValueError(
+                    f"Environment variable {self._env_api_key_name} must be set"
+                )
         return OpenAI(api_key=api_key, base_url=self.base_url)
 
     def init_async_client(self):
         api_key = self._api_key or os.getenv(self._env_api_key_name)
         if not api_key:
-            raise ValueError(
-                f"Environment variable {self._env_api_key_name} must be set"
-            )
+            if self.base_url and "api.openai.com" not in self.base_url:
+                api_key = "no-key-required"
+            else:
+                raise ValueError(
+                    f"Environment variable {self._env_api_key_name} must be set"
+                )
         return AsyncOpenAI(api_key=api_key, base_url=self.base_url)
 
     # def _parse_chat_completion(self, completion: ChatCompletion) -> "GeneratorOutput":

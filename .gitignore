@@ -65,5 +65,8 @@ next-env.d.ts
 
 .idea/
 
+# vendor assets (generated from node_modules by scripts/copy-vendor-assets.sh)
+/public/vendor/
+
 # ignore adding self-signed certs
 certs/

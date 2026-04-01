@@ -6,9 +6,13 @@
     "dev": "next dev --turbopack --port 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "bash scripts/copy-vendor-assets.sh || true",
+    "copy-vendor": "bash scripts/copy-vendor-assets.sh"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
+    "chart.js": "^4.5.1",
     "mermaid": "^11.4.1",
     "next": "15.3.1",
     "next-intl": "^4.1.0",

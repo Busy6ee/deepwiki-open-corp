@@ -70,6 +70,14 @@ RUN if [ -n "${CUSTOM_CERT_DIR}" ]; then \
 
 ENV PATH="/opt/venv/bin:$PATH"
 
+# SSL certificate environment variables for Python/Node.js/Git
+# These ensure all HTTP clients trust the system CA bundle (including custom certs)
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+ENV GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt
+
 # Copy Python dependencies
 COPY --from=py_deps /api/.venv /opt/venv
 COPY api/ ./api/
