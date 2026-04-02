@@ -33,11 +33,32 @@ deepwiki-open/                    # upstream 소스 (수정하지 않음)
     ├── README.md                 # 이 파일
     ├── .env.example              # 환경변수 템플릿
     ├── docker-compose.override.yml  # 오버라이드 템플릿
+    ├── preflight-check.sh        # 빌드 전 사전 점검 스크립트
     ├── config/
     │   └── generator.json        # vLLM 모델만 포함된 커스텀 설정
     └── certs/
         └── (사내 CA 인증서 배치)
 ```
+
+---
+
+## 사전 점검 스크립트
+
+설정 완료 후 빌드 전에 사전 점검 스크립트로 누락/오류를 확인할 수 있습니다:
+
+```bash
+bash onpremise/preflight-check.sh
+```
+
+점검 항목:
+- 필수 도구 (docker, docker compose, curl)
+- 필수 파일 (`.env`, `docker-compose.override.yml`, `generator.json`)
+- `.env` 필수 변수 (API 키, vLLM URL, 임베더 타입, 프록시)
+- SSL 인증서 존재 및 PEM 형식
+- 호스트 볼륨 디렉토리 (`~/.adalflow`, `api/logs`) — 없으면 자동 생성
+- Docker 데몬 상태 및 디스크 여유
+- vLLM 서버 연결 (HTTP 응답 확인)
+- `docker compose config` 유효성
 
 ---
 
@@ -98,7 +119,24 @@ cp onpremise/docker-compose.override.yml docker-compose.override.yml
 > `docker-compose.override.yml`은 `docker compose`가 자동으로 `docker-compose.yml`과 병합합니다.
 > 원본 파일을 수정하지 않으므로 `git pull` 시 충돌이 없습니다.
 
-### 5. 빌드 및 기동
+### 5. 호스트 디렉토리 준비
+
+```bash
+mkdir -p ~/.adalflow    # 레포/임베딩 데이터 저장소
+mkdir -p api/logs       # 로그 볼륨 마운트 대상
+```
+
+> Docker가 볼륨 마운트 시 자동 생성하지만, 명시적으로 만들어두면 권한 문제를 예방합니다.
+
+### 6. 사전 점검
+
+```bash
+bash onpremise/preflight-check.sh
+```
+
+FAIL 항목이 있으면 해결 후 다시 실행하세요.
+
+### 7. 빌드 및 기동
 
 ```bash
 # 사내 인증서 포함 빌드 + 기동
@@ -108,7 +146,7 @@ docker compose up -d --build
 docker compose logs -f deepwiki
 ```
 
-### 6. 검증
+### 8. 검증
 
 ```bash
 # 헬스체크
